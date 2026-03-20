@@ -27,7 +27,7 @@ jobs:
 
       - name: ⚙️ Terraform Init (provider only, no backend)
         working-directory: ./terraform
-        run: 
+        run: terraform init -backend=false -no-color
 
       - name: 🧹 Terraform Format Check
         working-directory: ./terraform
