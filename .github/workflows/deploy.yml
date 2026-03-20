@@ -25,17 +25,15 @@ jobs:
       - name: 🛠️ Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+      - name: ⚙️ Terraform Init (provider only, no backend)
+        working-directory: ./terraform
+        run: 
+
       - name: 🧹 Terraform Format Check
         working-directory: ./terraform
         run: terraform fmt -check
         continue-on-error: true
-
-      - name: ⚙️ Terraform Init (Local Test)
-        working-directory: ./terraform
-        run: |
-          chmod +x ../scripts/tf-init.sh
-          ../scripts/tf-init.sh
-
+        
       - name: 🛡️ Terraform Validate
         working-directory: ./terraform
         run: terraform validate -no-color
