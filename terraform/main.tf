@@ -7,8 +7,13 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+     # --- FOR ARCHIVE BLOCK ---
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.4.0"
   }
 }
+
 
 # I configure the AWS provider to dynamically accept the target region 
 # via variables, keeping the module entirely stateless and reusable.
