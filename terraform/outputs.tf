@@ -2,14 +2,14 @@
 # cost-center tagging evaluation on-demand if needed.
 output "tag_remediation_lambda_arn" {
   description = "The ARN of the Lambda function that terminates untagged resources"
-  value       = aws_lambda_function.remediation_lambda.arn 
+  value       = aws_lambda_function.remediation_lambda.arn
 }
 
 # I output the SNS Topic ARN so the Finance and Cloud Ops teams 
 # can subscribe to alerts when an untagged resource is deleted.
 output "billing_alerts_sns_arn" {
   description = "The ARN of the SNS topic for untagged resource deletion alerts"
-  value       = aws_sns_topic.remediation_alerts.arn 
+  value       = aws_sns_topic.remediation_alerts.arn
 }
 
 # I output the IAM Role ARN for strict auditing. 
