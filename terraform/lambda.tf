@@ -18,8 +18,8 @@ resource "aws_lambda_function" "remediation_lambda" {
   handler          = "remediation.lambda_handler"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
-  # AWS  run this on a secure Linux container using Python 3.9
-  runtime = "python3.9"
+  # AWS  run this on a secure Linux container using Python 3.12
+  runtime = "python3.12"
   timeout = 60 # Give it 60 seconds to run the account audit
 
   # Injecting the SNS Topic ARN dynamically
