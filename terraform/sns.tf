@@ -2,8 +2,8 @@
 resource "aws_sns_topic" "remediation_alerts" {
   name = "zero-tolerance-finops-alerts"
 
-   # --- THE FIX: Encrypt messages at rest using the free AWS managed key ---
-  kms_master_key_id = "alias/aws/sns" 
+  # --- THE FIX: Encrypt messages at rest using the free AWS managed key ---
+  kms_master_key_id = "alias/aws/sns"
 }
 
 # 2. Subscribe Your Email to the Hub
