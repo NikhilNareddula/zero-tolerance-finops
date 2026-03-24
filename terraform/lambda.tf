@@ -7,6 +7,10 @@ data "archive_file" "lambda_zip" {
 
 # 2. Create the AWS Lambda function
 resource "aws_lambda_function" "remediation_lambda" {
+
+ # tfsec:ignore:aws-lambda-enable-tracing
+ # checkov:skip=CKV_AWS_50: X-Ray tracing adds unnecessary cost to a 2-second FinOps cron job.
+
   filename         = data.archive_file.lambda_zip.output_path
   function_name    = "zero-tolerance-remediation"
   role             = aws_iam_role.remediation_role.arn
