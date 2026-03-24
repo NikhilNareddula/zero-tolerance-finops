@@ -10,7 +10,8 @@ resource "aws_lambda_function" "remediation_lambda" {
 
  # tfsec:ignore:aws-lambda-enable-tracing
  # checkov:skip=CKV_AWS_50: X-Ray tracing adds unnecessary cost to a 2-second FinOps cron job.
-
+ # checkov:skip=CKV_AWS_117: Lambda only interacts with public AWS APIs (SNS, EC2); VPC deployment adds unnecessary NAT costs.
+ # checkov:skip=CKV_AWS_272: Code signing is overkill for a single-file FinOps script deployed exclusively via CI/CD.
   filename         = data.archive_file.lambda_zip.output_path
   function_name    = "zero-tolerance-remediation"
   role             = aws_iam_role.remediation_role.arn
