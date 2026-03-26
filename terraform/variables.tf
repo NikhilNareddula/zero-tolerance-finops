@@ -41,7 +41,7 @@ variable "repo_name" {
 variable "security_alert_email" {
   description = "The email address that will receive the Zero-Tolerance FinOps alerts"
   type        = string
-
+  sensitive   = true
   # Notice there is no 'default = ' here! 
   # This forces Terraform to look for your TF_VAR_ environment variable to fill it.
 }
