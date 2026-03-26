@@ -1,11 +1,13 @@
 #!/bin/bash
 set -e
 
-# 1. AUTO-DETECT: Get your Account ID and current AWS region
+# 1. AUTO-DETECT: This only works if OIDC logged in first
+echo "-----------------------------------------------"
+echo "🔐 Checking OIDC Identity..."
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-# If no region is set in your environment, default to Mumbai
-REGION=$(aws configure get region)
-REGION=${REGION:-"ap-south-1"}
+
+# Hardcode region to Mumbai for Zero-Tolerance consistency
+REGION="ap-south-1"
 
 # 2. DEFINE: The unique bucket name using your Account ID
 BUCKET_NAME="zero-tolerance-state-${ACCOUNT_ID}"
@@ -17,9 +19,9 @@ echo "-----------------------------------------------"
 
 # 3. BOOTSTRAP: Create the bucket if it doesn't exist
 if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
-    echo "✅ Bucket exists."
+    echo "✅ Backend Bucket already exists."
 else
-    echo "⚠️  Creating bucket $BUCKET_NAME..."
+    echo "⚠️  Creating $BUCKET_NAME..."
     aws s3api create-bucket \
         --bucket "$BUCKET_NAME" \
         --region "$REGION" \
@@ -31,7 +33,8 @@ else
         --versioning-configuration Status=Enabled
 fi
 
-# 4. INITIALIZE: Tell Terraform to use these settings
+# 4. INITIALIZE: Connect Terraform to the Cloud
+# We use -reconfigure to force it to look at the new OIDC session
 terraform init \
   -backend-config="bucket=${BUCKET_NAME}" \
   -backend-config="key=zero-tolerance/terraform.tfstate" \
