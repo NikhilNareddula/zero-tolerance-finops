@@ -26,9 +26,9 @@ provider "aws" {
   # tracking and explicitly marks resources as managed by automation.
   default_tags {
     tags = {
-      Project     = var.project_name
-      ManagedBy   = var.managed_by
-      Environment = var.environment
+      Project      = var.project_name
+      ManagedBy    = var.managed_by
+      Environments = var.environment
     }
   }
 }
