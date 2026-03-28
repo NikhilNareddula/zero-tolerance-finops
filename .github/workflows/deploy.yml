@@ -137,7 +137,4 @@ jobs:
         working-directory: ./terraform
         run: terraform apply -auto-approve -input=false
 
-      - name: terraform destroy (cleanup)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        working-directory: ./terraform
-        run: terraform destroy -auto-approve -input=false  
+       
