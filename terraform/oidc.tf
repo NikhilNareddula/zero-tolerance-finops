@@ -61,12 +61,12 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
         Resource = "*"
       },
       {
-        # Block 2: The Muscle (STAY SECURE)
+        # Block 2: The security-sensitive IAM actions that Terraform needs to create the OIDC Role and Policies
         # Only allow creating/editing roles that start with ZeroTolerance
         Sid    = "ManageProjectRolesOnly"
         Effect = "Allow"
         Action = [
-          
+
           "iam:CreateRole",
           "iam:DeleteRole",
           "iam:PutRolePolicy",
