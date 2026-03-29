@@ -25,7 +25,7 @@ resource "aws_iam_role" "remediation_role" {
 resource "aws_iam_role_policy" "remediation_policy" {
   count = var.is_enabled ? 1 : 0 # THE SAFETY SWITCH
   name  = "zero-tolerance-ec2-policy"
-  role = aws_iam_role.remediation_role[0].id
+  role  = aws_iam_role.remediation_role[0].id
 
   policy = jsonencode({
     Version = "2012-10-17"
