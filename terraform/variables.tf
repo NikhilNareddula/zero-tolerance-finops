@@ -45,3 +45,9 @@ variable "security_alert_email" {
   # Notice there is no 'default = ' here! 
   # This forces Terraform to look for your TF_VAR_ environment variable to fill it.
 }
+
+variable "is_enabled" {
+  description = "Safety Switch: true to deploy, false to destroy."
+  type        = bool
+  default     = false
+}

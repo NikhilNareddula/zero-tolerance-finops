@@ -7,6 +7,8 @@ data "archive_file" "lambda_zip" {
 
 # 2. Create the AWS Lambda function
 resource "aws_lambda_function" "remediation_lambda" {
+  # Logic: If is_enabled is true, count is 1. If false, count is 0.
+  count = var.is_enabled ? 1 : 0
 
   # tfsec:ignore:aws-lambda-enable-tracing
   # checkov:skip=CKV_AWS_50: X-Ray tracing adds unnecessary cost to a 2-second FinOps cron job.

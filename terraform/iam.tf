@@ -4,6 +4,7 @@ data "aws_region" "current" {}
 
 # 1. The Trust Policy (The Badge)
 resource "aws_iam_role" "remediation_role" {
+  count = var.is_enabled ? 1 : 0 # THE SAFETY SWITCH
   name = "zero-tolerance-remediation-role"
 
   assume_role_policy = jsonencode({
@@ -22,6 +23,7 @@ resource "aws_iam_role" "remediation_role" {
 
 # 2. The Permissions Policy (What the Badge can do)
 resource "aws_iam_role_policy" "remediation_policy" {
+  count = var.is_enabled ? 1 : 0 # THE SAFETY SWITCH
   name = "zero-tolerance-ec2-policy"
   role = aws_iam_role.remediation_role.id
 
