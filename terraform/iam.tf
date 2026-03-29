@@ -4,7 +4,8 @@ data "aws_region" "current" {}
 
 # 1. The Trust Policy (The Badge)
 resource "aws_iam_role" "remediation_role" {
-  name = "zero-tolerance-remediation-role"
+  count = var.is_enabled ? 1 : 0 # THE SAFETY SWITCH
+  name  = "zero-tolerance-remediation-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -22,8 +23,9 @@ resource "aws_iam_role" "remediation_role" {
 
 # 2. The Permissions Policy (What the Badge can do)
 resource "aws_iam_role_policy" "remediation_policy" {
-  name = "zero-tolerance-ec2-policy"
-  role = aws_iam_role.remediation_role.id
+  count = var.is_enabled ? 1 : 0 # THE SAFETY SWITCH
+  name  = "zero-tolerance-ec2-policy"
+  role  = aws_iam_role.remediation_role[0].id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -49,7 +51,7 @@ resource "aws_iam_role_policy" "remediation_policy" {
         Effect = "Allow"
         Action = "sns:Publish"
         # Locked to only publish to the topic we create in sns.tf
-        Resource = aws_sns_topic.remediation_alerts.arn
+        Resource = aws_sns_topic.remediation_alerts[0].arn
       },
       {
         # --- BLOCK 3: CloudWatch Logging ---
