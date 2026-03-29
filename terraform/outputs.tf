@@ -2,7 +2,7 @@
 # cost-center tagging evaluation on-demand if needed.
 output "tag_remediation_lambda_arn" {
   description = "The ARN of the Lambda function that terminates untagged resources"
-  value       = aws_lambda_function.remediation_lambda.arn
+  value       = aws_lambda_function.remediation_lambda[0].arn
 }
 
 # I output the SNS Topic ARN so the Finance and Cloud Ops teams 
