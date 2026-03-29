@@ -45,7 +45,7 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
   description = "Strict permissions for GitHub Actions to build the FinOps project"
 
   policy = jsonencode({
-    Version = "2012-10-17"
+    Version = "2012-10-17"  
     Statement = [
       {
         # Block 1: The Application & Infrastructure Services
@@ -61,12 +61,12 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
         Resource = "*"
       },
       {
-        # Block 2: The IAM Security Sandbox 
+        # Block 2: The Muscle (STAY SECURE)
+        # Only allow creating/editing roles that start with ZeroTolerance
         Sid    = "ManageProjectRolesOnly"
         Effect = "Allow"
         Action = [
-          "iam:Get*",
-          "iam:List*",
+          
           "iam:CreateRole",
           "iam:DeleteRole",
           "iam:PutRolePolicy",
@@ -74,13 +74,23 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
           "iam:AttachRolePolicy",
           "iam:DetachRolePolicy",
           "iam:PassRole",
-          "iam:TagRole",
-          "iam:GetOpenIDConnectProvider",
-          "iam:GetPolicy",
-          "iam:GetPolicyVersion"
+          "iam:TagRole"
         ]
         # CRITICAL: This role can only create or edit OTHER roles that start with the name "ZeroTolerance"
         Resource = "arn:aws:iam::*:role/ZeroTolerance*"
+      },
+      {
+        # Block 3: The Eyes (READ-ONLY access to IAM for Terraform)
+        # Terraform MUST be able to read the OIDC provider and IAM roles to function, but we don't want to give it free rein over IAM
+        # Get and List are "Read-Only" actions, so this is still very secure.
+        Sid    = "IAMReadAccess"
+        Effect = "Allow"
+        Action = [
+          "iam:Get*",
+          "iam:List*"
+        ]
+        # This MUST be "*" so Terraform can see the OIDC and Policy paths
+        Resource = "*" 
       }
     ]
   })
