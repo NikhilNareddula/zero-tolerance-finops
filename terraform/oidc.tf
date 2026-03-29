@@ -43,7 +43,7 @@ resource "aws_iam_role" "github_actions_role" {
 resource "aws_iam_policy" "github_actions_least_privilege" {
   name        = "ZeroTolerance-GitHubActions-Policy"
   description = "Strict permissions for GitHub Actions to build the FinOps project"
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -56,7 +56,7 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
           "lambda:*",
           "events:*",
           "sns:*",
-          "ec2:*"   # Allows Terraform to build/tag test EC2 instances
+          "ec2:*" # Allows Terraform to build/tag test EC2 instances
         ]
         Resource = "*"
       },
