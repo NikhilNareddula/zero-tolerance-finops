@@ -39,16 +39,57 @@ resource "aws_iam_role" "github_actions_role" {
   })
 }
 
-# 3. Give the Pipeline Role permission to build your infrastructure
-# (Using Admin here for the initial bootstrap so it doesn't crash. 
-#  scope this down to Least Privilege later).
-# TODO: Restrict to least privilege policies after bootstrap is successful and stable.
-resource "aws_iam_role_policy_attachment" "github_actions_admin" {
-  role       = aws_iam_role.github_actions_role.id
-  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+# 3. Create the Custom Least Privilege Policy (REPLACES ADMIN)
+resource "aws_iam_policy" "github_actions_least_privilege" {
+  name        = "ZeroTolerance-GitHubActions-Policy"
+  description = "Strict permissions for GitHub Actions to build the FinOps project"
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        # Block 1: The Application & Infrastructure Services
+        Sid    = "ManageAppServices"
+        Effect = "Allow"
+        Action = [
+          "s3:*",
+          "lambda:*",
+          "events:*",
+          "sns:*",
+          "ec2:*"   # Allows Terraform to build/tag test EC2 instances
+        ]
+        Resource = "*"
+      },
+      {
+        # Block 2: The IAM Security Sandbox (The Senior Flex)
+        Sid    = "ManageProjectRolesOnly"
+        Effect = "Allow"
+        Action = [
+          "iam:Get*",
+          "iam:List*",
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:PassRole",
+          "iam:TagRole"
+        ]
+        # CRITICAL: This role can only create or edit OTHER roles that start with the name "ZeroTolerance"
+        Resource = "arn:aws:iam::*:role/ZeroTolerance*"
+      }
+    ]
+  })
 }
 
-# 4. Output the Role ARN so we can easily copy it into your YAML file
+# 4. Attach the NEW policy to your existing Bouncer Role
+resource "aws_iam_role_policy_attachment" "github_actions_custom_attach" {
+  role       = aws_iam_role.github_actions_role.id
+  policy_arn = aws_iam_policy.github_actions_least_privilege.arn
+}
+
+# 5. Output the Role ARN so we can easily copy it into your YAML file
 output "github_actions_role_arn" {
   value       = aws_iam_role.github_actions_role.arn
   description = "The ARN of the IAM role to use in your GitHub Actions workflow for OIDC authentication."
