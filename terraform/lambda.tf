@@ -16,7 +16,7 @@ resource "aws_lambda_function" "remediation_lambda" {
   # checkov:skip=CKV_AWS_272: Code signing is overkill for a single-file FinOps script deployed exclusively via CI/CD.
   filename         = data.archive_file.lambda_zip.output_path
   function_name    = "zero-tolerance-remediation"
-  role             = aws_iam_role.remediation_role.arn
+  role             = aws_iam_role.remediation_role[0].arn
   handler          = "remediation.lambda_handler"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
@@ -27,7 +27,7 @@ resource "aws_lambda_function" "remediation_lambda" {
   # Injecting the SNS Topic ARN dynamically
   environment {
     variables = {
-      SNS_TOPIC_ARN = aws_sns_topic.remediation_alerts.arn
+      SNS_TOPIC_ARN = aws_sns_topic.remediation_alerts[0].arn
     }
   }
 }

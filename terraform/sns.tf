@@ -10,7 +10,7 @@ resource "aws_sns_topic" "remediation_alerts" {
 # 2. Subscribe Your Email to the Hub
 resource "aws_sns_topic_subscription" "email_alerts" {
   count     = var.is_enabled ? 1 : 0 # THE SAFETY SWITCH
-  topic_arn = aws_sns_topic.remediation_alerts.arn
+  topic_arn = aws_sns_topic.remediation_alerts[0].arn
   protocol  = "email"
 
   # This automatically pulls the email from your GitHub Secrets (TF_VAR_security_alert_email)

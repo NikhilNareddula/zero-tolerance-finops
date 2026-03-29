@@ -9,23 +9,23 @@ output "tag_remediation_lambda_arn" {
 # can subscribe to alerts when an untagged resource is deleted.
 output "billing_alerts_sns_arn" {
   description = "The ARN of the SNS topic for untagged resource deletion alerts"
-  value       = aws_sns_topic.remediation_alerts.arn
+  value       = aws_sns_topic.remediation_alerts[0].arn
 }
 
 # I output the IAM Role ARN for strict auditing. 
 output "lambda_execution_role_arn" {
   description = "The IAM Role assumed by the FinOps tag remediation Lambda"
-  value       = aws_iam_role.remediation_role.arn
+  value       = aws_iam_role.remediation_role[0].arn
 }
 
 # Output the Bouncer Rule
 output "bouncer_eventbridge_arn" {
   description = "The ARN of the EventBridge rule catching pending EC2 instances"
-  value       = aws_cloudwatch_event_rule.bouncer_rule.arn
+  value       = aws_cloudwatch_event_rule.bouncer_rule[0].arn
 }
 
 # Output the Auditor Rule
 output "auditor_eventbridge_arn" {
   description = "The ARN of the EventBridge rule running the daily audit"
-  value       = aws_cloudwatch_event_rule.auditor_rule.arn
+  value       = aws_cloudwatch_event_rule.auditor_rule[0].arn
 }
