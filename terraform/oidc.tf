@@ -61,7 +61,7 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
         Resource = "*"
       },
       {
-        # Block 2: The IAM Security Sandbox (The Senior Flex)
+        # Block 2: The IAM Security Sandbox 
         Sid    = "ManageProjectRolesOnly"
         Effect = "Allow"
         Action = [
@@ -74,7 +74,10 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
           "iam:AttachRolePolicy",
           "iam:DetachRolePolicy",
           "iam:PassRole",
-          "iam:TagRole"
+          "iam:TagRole",
+          "iam:GetOpenIDConnectProvider",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion"
         ]
         # CRITICAL: This role can only create or edit OTHER roles that start with the name "ZeroTolerance"
         Resource = "arn:aws:iam::*:role/ZeroTolerance*"
