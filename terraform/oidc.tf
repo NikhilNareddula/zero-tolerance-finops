@@ -1,3 +1,11 @@
+# checkov:skip=CKV_AWS_286: CI/CD deployment role intentionally requires IAM creation capabilities to deploy the FinOps engine.
+# checkov:skip=CKV_AWS_288: CI/CD role requires read access to verify Terraform state.                                       
+# checkov:skip=CKV_AWS_355: CI/CD 'Eyes' (Describe/Get) require '*' resource as they cannot be bound to a specific ARN.
+# checkov:skip=CKV_AWS_290: CI/CD role intentionally requires write access to deploy infrastructure.
+# checkov:skip=CKV_AWS_289: CI/CD role is restricted by namespace (ZeroTolerance*) but requires policy management within that namespace.
+# checkov:skip=CKV_AWS_287: CI/CD role needs IAM read permissions for Terraform state management.
+  
+
 # 1. Register GitHub as a trusted Identity Provider in AWS
 resource "aws_iam_openid_connect_provider" "github" {
   url            = "https://token.actions.githubusercontent.com"
