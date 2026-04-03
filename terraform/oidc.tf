@@ -27,6 +27,24 @@ resource "aws_iam_role" "github_actions_role" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid      = "AllowIAMRead"
+        Effect   = "Allow"
+        Action   = [
+          "iam:GetOpenIDConnectProvider",
+          "iam:GetPolicy",
+          "iam:GetRole",
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies"
+        ]
+        Resource = [
+          # Dynamically builds the ARN using your Account ID
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ZeroTolerance-GitHubActions-Deployer",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/ZeroTolerance-GitHubActions-Policy"
+        
+        ]
+      },
+      {
         Effect = "Allow"
         Principal = {
           Federated = aws_iam_openid_connect_provider.github.arn
