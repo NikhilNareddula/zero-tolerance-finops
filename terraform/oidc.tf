@@ -51,14 +51,14 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
         Sid      = "S3StateBucketList"
         Effect   = "Allow"
         Action   = ["s3:ListBucket"]
-        Resource = "arn:aws:s3:::zero-tolerance-finops-state-*"
+        Resource = "arn:aws:s3:::zero-tolerance-state-*"
       },
       # --- 2. S3 State Management (Object Level) ---
       {
         Sid      = "S3StateBucketObjects"
         Effect   = "Allow"
         Action   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
-        Resource = "arn:aws:s3:::zero-tolerance-finops-state-*/*"
+        Resource = "arn:aws:s3:::zero-tolerance-state-*/*"
       },
       {
         Sid      = "S3GlobalRead"
