@@ -94,8 +94,7 @@ jobs:
 
       - name: ⚙️ Terraform Init (Connect to AWS Backend)
         working-directory: ./terraform
-        run: chmod +x scripts/tf-init.sh &&
-             ./scripts/tf-init.sh
+        run: terraform init -no-color 
 
       
 
