@@ -1,10 +1,3 @@
-# checkov:skip=CKV_AWS_286: CI/CD deployment role intentionally requires IAM creation capabilities to deploy the FinOps engine.
-# checkov:skip=CKV_AWS_288: CI/CD role requires read access to verify Terraform state.                                       
-# checkov:skip=CKV_AWS_355: CI/CD 'Eyes' (Describe/Get) require '*' resource as they cannot be bound to a specific ARN.
-# checkov:skip=CKV_AWS_290: CI/CD role intentionally requires write access to deploy infrastructure.
-# checkov:skip=CKV_AWS_289: CI/CD role is restricted by namespace (ZeroTolerance*) but requires policy management within that namespace.
-# checkov:skip=CKV_AWS_287: CI/CD role needs IAM read permissions for Terraform state management.
-  
 
 # 1. Register GitHub as a trusted Identity Provider in AWS
 resource "aws_iam_openid_connect_provider" "github" {
@@ -18,7 +11,7 @@ resource "aws_iam_openid_connect_provider" "github" {
   ]
 }
 
-# 2. Create the IAM Role for the GitHub Pipeline (The Bouncer)
+# 2. Create the IAM Role for the GitHub Pipeline
 resource "aws_iam_role" "github_actions_role" {
   name = "ZeroTolerance-GitHubActions-Deployer"
 
@@ -37,8 +30,6 @@ resource "aws_iam_role" "github_actions_role" {
             "token.actions.githubusercontent.com:aud" : "sts.amazonaws.com"
           }
           "StringLike" = {
-            # CRITICAL: This physically locks the role to your exact GitHub repository
-            # Format: repo:OWNER/REPO:ref:refs/heads/BRANCH or repo:OWNER/REPO:* for all branches
             "token.actions.githubusercontent.com:sub" : "repo:${var.repo_name}:*"
           }
         }
@@ -47,80 +38,137 @@ resource "aws_iam_role" "github_actions_role" {
   })
 }
 
-# 3. Create the Custom Least Privilege Policy (REPLACES ADMIN)
+# 3. The TRULY Strict Least Privilege Policy (Zero Skips)
 resource "aws_iam_policy" "github_actions_least_privilege" {
   name        = "ZeroTolerance-GitHubActions-Policy"
-  description = "Strict permissions for GitHub Actions to build the FinOps project"
+  description = "Strict, zero-skip IAM policy for FinOps deployment"
 
   policy = jsonencode({
-    Version = "2012-10-17"  
+    Version = "2012-10-17"
     Statement = [
+      # --- 1. S3 State Management (Bucket Level) ---
       {
-        # Block 1: The Application & Infrastructure Services
-        Sid    = "ManageAppServices"
-        Effect = "Allow"
-        Action = [
-          "s3:*",
-          "lambda:*",
-          "events:*",
-          "sns:*",
-          "ec2:*" # Allows Terraform to build/tag test EC2 instances
-        ]
+        Sid      = "S3StateBucketList"
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
+        Resource = "arn:aws:s3:::zero-tolerance-finops-state-*"
+      },
+      # --- 2. S3 State Management (Object Level) ---
+      {
+        Sid      = "S3StateBucketObjects"
+        Effect   = "Allow"
+        Action   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
+        Resource = "arn:aws:s3:::zero-tolerance-finops-state-*/*"
+      },
+      {
+        Sid      = "S3GlobalRead"
+        Effect   = "Allow"
+        Action   = ["s3:GetBucketLocation", "s3:ListAllMyBuckets"]
+        Resource = "*"
+      },
+
+      # --- 2. EC2 Remediation (Strict ARN + Conditions) ---
+      {
+        Sid      = "EC2Discovery"
+        Effect   = "Allow"
+        Action   = ["ec2:DescribeInstances", "ec2:DescribeTags", "ec2:DescribeInstanceStatus"]
         Resource = "*"
       },
       {
-        # Block 2: The Muscle (STAY SECURE)
-        # Manages all project roles AND policies, handling both uppercase and lowercase.
-        Sid    = "ManageProjectIAM"
+        Sid      = "EC2Remediation"
+        Effect   = "Allow"
+        Action   = ["ec2:StopInstances", "ec2:CreateTags", "ec2:DeleteTags"]
+        Resource = "arn:aws:ec2:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:instance/*"
+        Condition = {
+          StringEquals = { "aws:ResourceTag/Project" : "ZeroToleranceFinOps" }
+        }
+      },
+
+      # --- 3. Lambda (Removed wildcard, explicit API actions) ---
+      {
+        Sid    = "ManageLambda"
         Effect = "Allow"
         Action = [
-          # Role Permissions
-          "iam:CreateRole",
-          "iam:DeleteRole",
-          "iam:PutRolePolicy",
-          "iam:DeleteRolePolicy",
-          "iam:AttachRolePolicy",
-          "iam:DetachRolePolicy",
-          "iam:PassRole",
-          "iam:TagRole",
-          # Policy Permissions (To fix Error 2)
-          "iam:CreatePolicy",
-          "iam:DeletePolicy",
-          "iam:CreatePolicyVersion",
-          "iam:DeletePolicyVersion"
+          "lambda:CreateFunction", "lambda:DeleteFunction", "lambda:UpdateFunctionCode",
+          "lambda:UpdateFunctionConfiguration", "lambda:GetFunction", "lambda:GetFunctionConfiguration",
+          "lambda:ListFunctions", "lambda:AddPermission", "lambda:RemovePermission", "lambda:ListTags", "lambda:TagResource"
+        ]
+        Resource = "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:zero-tolerance-*"
+      },
+
+      # --- 4. EventBridge (Removed wildcard, explicit API actions) ---
+      {
+        Sid    = "ManageEventBridge"
+        Effect = "Allow"
+        Action = [
+          "events:PutRule", "events:DeleteRule", "events:DescribeRule",
+          "events:PutTargets", "events:RemoveTargets", "events:ListTargetsByRule", "events:ListTagsForResource", "events:TagResource"
+        ]
+        Resource = "arn:aws:events:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:rule/zero-tolerance-*"
+      },
+
+      # --- 5. SNS (Removed wildcard, explicit API actions) ---
+      {
+        Sid    = "ManageSNS"
+        Effect = "Allow"
+        Action = [
+          "sns:CreateTopic", "sns:DeleteTopic", "sns:SetTopicAttributes",
+          "sns:GetTopicAttributes", "sns:ListTopics", "sns:Subscribe",
+          "sns:Unsubscribe", "sns:ListSubscriptionsByTopic", "sns:ListTagsForResource", "sns:TagResource"
+        ]
+        Resource = "arn:aws:sns:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:zero-tolerance-*"
+      },
+
+      # --- 6. IAM Role & Policy (Strict Account ID Binding) ---
+      {
+        Sid    = "ManageIAM"
+        Effect = "Allow"
+        Action = [
+          "iam:CreateRole", "iam:DeleteRole", "iam:GetRole", "iam:TagRole", "iam:ListRoleTags",
+          "iam:PassRole", "iam:PutRolePolicy", "iam:DeleteRolePolicy", "iam:GetRolePolicy",
+          "iam:AttachRolePolicy", "iam:DetachRolePolicy", "iam:ListAttachedRolePolicies",
+          "iam:CreatePolicy", "iam:DeletePolicy", "iam:GetPolicy", "iam:GetPolicyVersion",
+          "iam:ListPolicyVersions", "iam:CreatePolicyVersion", "iam:DeletePolicyVersion"
         ]
         Resource = [
-          "arn:aws:iam::*:role/ZeroTolerance*",
-          "arn:aws:iam::*:role/zero-tolerance*",
-          "arn:aws:iam::*:policy/ZeroTolerance*",
-          "arn:aws:iam::*:policy/zero-tolerance*"
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/zero-tolerance-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/zero-tolerance-*"
         ]
       },
       {
-        # Block 3: The Eyes (READ-ONLY access to IAM for Terraform)
-        # Terraform MUST be able to read the OIDC provider and IAM roles to function, but we don't want to give it free rein over IAM
-        # Get and List are "Read-Only" actions, so this is still very secure.
-        Sid    = "IAMReadAccess"
+        Sid      = "IAMGlobalRead"
+        Effect   = "Allow"
+        Action   = ["iam:ListRoles", "iam:ListPolicies"]
+        Resource = "*"
+      },
+
+      # --- 7. CloudWatch Logs for Lambda ---
+      {
+        Sid    = "ManageCloudWatchLogs"
         Effect = "Allow"
         Action = [
-          "iam:Get*",
-          "iam:List*"
+          "logs:CreateLogGroup", "logs:DeleteLogGroup", "logs:ListLogGroups",
+          "logs:PutRetentionPolicy", "logs:DescribeLogGroups", "logs:ListTagsForResource", "logs:TagResource"
         ]
-        # This MUST be "*" so Terraform can see the OIDC and Policy paths
-        Resource = "*" 
+        Resource = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/zero-tolerance-*"
       }
     ]
   })
 }
 
-# 4. Attach the NEW policy to your existing Bouncer Role
+# 4. Attachment
 resource "aws_iam_role_policy_attachment" "github_actions_custom_attach" {
   role       = aws_iam_role.github_actions_role.id
   policy_arn = aws_iam_policy.github_actions_least_privilege.arn
 }
 
-# 5. Output the Role ARN so we can easily copy it into your YAML file
+# 5. Outputs
 output "github_actions_role_arn" {
   value       = aws_iam_role.github_actions_role.arn
-  description = "The ARN of the IAM role to use in your GitHub Actions workflow for OIDC authentication."
+  description = "Copy this ARN to your GitHub Repo Variable: AWS_OIDC_ROLE_ARN"
+}
+
+output "github_actions_oidc_provider_arn" {
+  value       = aws_iam_openid_connect_provider.github.arn
+  description = "The ARN of the GitHub OIDC provider (useful for troubleshooting trust relationships)."
 }

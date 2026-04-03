@@ -67,7 +67,7 @@ jobs:
         with:
           directory: ./terraform
           framework: terraform
-          soft_fail: true 
+          soft_fail: true
 
   # ==========================================
   # STAGE 3: EXECUTE (Plan & Deploy to AWS)
@@ -94,15 +94,35 @@ jobs:
 
       - name: ⚙️ Terraform Init (Connect to AWS Backend)
         working-directory: ./terraform
+        
         run: |
-          chmod +x ../scripts/tf-init.sh
-          ../scripts/tf-init.sh
+          # 1. Get the Account ID and IMMEDIATELY strip hidden characters (tr -d)
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text | tr -d '\r\n[:space:]')
+          
+          # 2. Construct the bucket name dynamically
+          BUCKET_NAME="zero-tolerance-state-${ACCOUNT_ID}"
+          
+          echo "Connecting to bucket: $BUCKET_NAME"
+          
+          # 3. Initialize with the dynamic bucket name
+          terraform init -no-color \
+            -backend-config="bucket=${BUCKET_NAME}" \
+            -backend-config="key=zero-tolerance/terraform.tfstate" \
+            -backend-config="region=ap-south-1"
+
+      
 
       - name: 📝 Terraform Plan
         id: plan
-        if: github.event_name == 'pull_request'
         working-directory: ./terraform
-        run: terraform plan -no-color -input=false
+        run: |
+          # 1. Run the plan and save it to the file 'tfplan'
+          terraform plan -out=tfplan -no-color -input=false
+          
+          # 2. Convert the plan to text and save it to the GitHub variable 'stdout'
+          echo "stdout<<EOF" >> $GITHUB_OUTPUT
+          terraform show -no-color tfplan >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
         continue-on-error: true
 
       - name: 🤖 Update Pull Request with Plan
@@ -133,8 +153,8 @@ jobs:
             });
 
       - name: 💥 Terraform Apply (Main Branch Only)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        # Only runs if we are pushing to main AND the plan was successful
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.plan.outcome == 'success'
         working-directory: ./terraform
-        run: terraform apply -auto-approve -input=false
-
-       
+        # Consumes the exact 'tfplan' file generated in the plan step
+        run: terraform apply -auto-approve -input=false tfplan
