@@ -37,8 +37,6 @@ resource "aws_iam_role" "github_actions_role" {
             "token.actions.githubusercontent.com:aud" : "sts.amazonaws.com"
           }
           "StringLike" = {
-            # CRITICAL: This physically locks the role to your exact GitHub repository
-            # Format: repo:OWNER/REPO:ref:refs/heads/BRANCH or repo:OWNER/REPO:* for all branches
             "token.actions.githubusercontent.com:sub" : "repo:${var.repo_name}:*"
           }
         }
