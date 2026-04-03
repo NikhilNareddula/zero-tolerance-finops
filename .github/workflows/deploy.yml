@@ -100,7 +100,7 @@ jobs:
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text | tr -d '\r\n[:space:]')
           
           # 2. Construct the bucket name dynamically
-          BUCKET_NAME="zero-tolerance-state-${ACCOUNT_ID}"
+          BUCKET_NAME="zero-tolerance-finops-state-${ACCOUNT_ID}"
           
           echo "Connecting to bucket: $BUCKET_NAME"
           
