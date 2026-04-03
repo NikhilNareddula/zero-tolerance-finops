@@ -94,7 +94,12 @@ jobs:
 
       - name: ⚙️ Terraform Init (Connect to AWS Backend)
         working-directory: ./terraform
-        run: terraform init -no-color 
+        
+        run: |
+          terraform init -no-color \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET_NAME }}" \
+            -backend-config="key=zero-tolerance/terraform.tfstate" \
+            -backend-config="region=ap-south-1"
 
       
 
