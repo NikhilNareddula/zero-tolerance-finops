@@ -67,7 +67,7 @@ jobs:
         with:
           directory: ./terraform
           framework: terraform
-          soft_fail: true 
+          soft_fail: true
 
   # ==========================================
   # STAGE 3: EXECUTE (Plan & Deploy to AWS)
@@ -94,16 +94,17 @@ jobs:
 
       - name: ⚙️ Terraform Init (Connect to AWS Backend)
         working-directory: ./terraform
-        run: |
-          chmod +x ../scripts/tf-init.sh
-          ../scripts/tf-init.sh
+        run: terraform init -no-color
+
+      
 
       - name: 📝 Terraform Plan
         id: plan
-        if: github.event_name == 'pull_request'
         working-directory: ./terraform
-        run: terraform plan -no-color -input=false
-        continue-on-error: true
+        # Removed the 'if: pull_request' so a plan is ALWAYS generated.
+        # Explicitly saving the output as 'tfplan'
+        run: terraform plan -out=tfplan -no-color -input=false
+        continue-on-error: false  # We want this step to fail if the plan fails, as it indicates an issue with the code
 
       - name: 🤖 Update Pull Request with Plan
         uses: actions/github-script@v7
@@ -133,8 +134,8 @@ jobs:
             });
 
       - name: 💥 Terraform Apply (Main Branch Only)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        # Only runs if we are pushing to main AND the plan was successful
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.plan.outcome == 'success'
         working-directory: ./terraform
-        run: terraform apply -auto-approve -input=false
-
-       
+        # Consumes the exact 'tfplan' file generated in the plan step
+        run: terraform apply -auto-approve -input=false tfplan
