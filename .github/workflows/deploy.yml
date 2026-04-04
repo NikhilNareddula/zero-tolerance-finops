@@ -2,15 +2,11 @@ name: "Zero-Tolerance FinOps Enterprise Pipeline"
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', '.gitignore'] # MUST IGNORE DOCS
   pull_request:
-    branches: [ main ]
-
-    paths-ignore:
-      - '**.md'           # Ignores ALL markdown files (README, CONTRIBUTING, etc.)
-      - 'docs/**'         # Ignores architecture diagrams and manuals
-      - '.gitignore'      # Ignores git config changes
-      - 'LICENSE'         # Ignores legal text changes
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', '.gitignore'] # MUST IGNORE DOCS
 
 permissions:
   id-token: write      # Required for OIDC authentication with AWS
