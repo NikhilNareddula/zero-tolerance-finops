@@ -561,7 +561,7 @@ All PRs automatically run quality gates and security scans before merge.
 ## 📧 Contact
 
 **Built by**: Nikhil  
-**Email**   : [@mail] (https://nareddulanikhil@gmail.com)
+**Email**   : [@mail](https://nareddulanikhil@gmail.com)
 **GitHub**: [@Nikhil-9391](https://github.com/Nikhil-9391)  
 **Project**: [zero-tolerance-finops](https://github.com/Nikhil-9391/zero-tolerance-finops)
 
