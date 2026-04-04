@@ -50,43 +50,11 @@ Organizations save **$10,000-$50,000+ monthly** by eliminating waste
 • Stops forgotten instances automatically  
 • Provides audit trail for compliance teams
 
----
-
-<p align="center">
-  <img src="images/architecture.png" alt="Zero-Tolerance FinOps Architecture" width="800">
-</p>
-
 
 
 ## 🏗️ Technical Architecture
 
-┌─────────────────────────────────────────────────────────────────┐
-│                    EVENT-DRIVEN ARCHITECTURE                    │
-└─────────────────────────────────────────────────────────────────┘
-
-  EC2 Instance Launch          Daily at 2 30 AM UTC
-         │                            │
-         ▼                            ▼
-  ┌─────────────┐            ┌─────────────┐
-  │ EventBridge │            │ EventBridge │
-  │   (Event)   │            │   (Cron)    │
-  └──────┬──────┘            └──────┬──────┘
-         │                          │
-         └──────────┬───────────────┘
-                    ▼
-            ┌────────────────┐
-            │ Lambda (Python)│
-            │  Remediation   │
-            └───────┬────────┘
-                    │
-        ┌───────────┼───────────┐
-        ▼           ▼           ▼
-   ┌────────┐  ┌────────┐  ┌──────────┐
-   │  EC2   │  │  SNS   │  │CloudWatch│
-   │ Stop   │  │ Alert  │  │   Logs   │
-   └────────┘  └────────┘  └──────────┘
-
-
+![Zero-Tolerance Architecture](docs/architecture.png)
 
 
 ### Core Components

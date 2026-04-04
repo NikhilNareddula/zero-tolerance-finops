@@ -1,4 +1,3 @@
-
 # 1. Register GitHub as a trusted Identity Provider in AWS
 resource "aws_iam_openid_connect_provider" "github" {
   url            = "https://token.actions.githubusercontent.com"
@@ -9,9 +8,14 @@ resource "aws_iam_openid_connect_provider" "github" {
     "6938fd4d98bab03faadb97b34396831e3780aea1",
     "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
   ]
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = all
+  }
 }
 
-# 2. Create the IAM Role for the GitHub Pipeline
+# 2. Create the IAM Role for the GitHub Pipeline (NO RESOURCE FIELDS HERE)
 resource "aws_iam_role" "github_actions_role" {
   name = "ZeroTolerance-GitHubActions-Deployer"
 
@@ -38,7 +42,7 @@ resource "aws_iam_role" "github_actions_role" {
   })
 }
 
-# 3. The TRULY Strict Least Privilege Policy (Zero Skips)
+# 3. The TRULY Strict Least Privilege Policy (AllowIAMRead moved here!)
 resource "aws_iam_policy" "github_actions_least_privilege" {
   name        = "ZeroTolerance-GitHubActions-Policy"
   description = "Strict, zero-skip IAM policy for FinOps deployment"
@@ -46,19 +50,39 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      # --- 0. Self-Read Permission (Fixes the Refresh State Error) ---
+      {
+        Sid    = "AllowIAMRead"
+        Effect = "Allow"
+        Action = [
+          "iam:GetOpenIDConnectProvider",
+          "iam:GetPolicy",
+          "iam:GetRole",
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies",
+          "iam:GetPolicyVersion",
+          "iam:ListPolicyVersions"
+        ]
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ZeroTolerance-GitHubActions-Deployer",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/ZeroTolerance-GitHubActions-Policy"
+        ]
+      },
+
       # --- 1. S3 State Management (Bucket Level) ---
       {
         Sid      = "S3StateBucketList"
         Effect   = "Allow"
         Action   = ["s3:ListBucket"]
-        Resource = "arn:aws:s3:::zero-tolerance-finops-state-*"
+        Resource = "arn:aws:s3:::zero-tolerance-state-*"
       },
       # --- 2. S3 State Management (Object Level) ---
       {
         Sid      = "S3StateBucketObjects"
         Effect   = "Allow"
         Action   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
-        Resource = "arn:aws:s3:::zero-tolerance-finops-state-*/*"
+        Resource = "arn:aws:s3:::zero-tolerance-state-*/*"
       },
       {
         Sid      = "S3GlobalRead"
@@ -67,7 +91,7 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
         Resource = "*"
       },
 
-      # --- 2. EC2 Remediation (Strict ARN + Conditions) ---
+      # --- 3. EC2 Remediation (Strict ARN + Conditions) ---
       {
         Sid      = "EC2Discovery"
         Effect   = "Allow"
@@ -84,7 +108,7 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
         }
       },
 
-      # --- 3. Lambda (Removed wildcard, explicit API actions) ---
+      # --- 4. Lambda (Removed wildcard, explicit API actions) ---
       {
         Sid    = "ManageLambda"
         Effect = "Allow"
@@ -96,7 +120,7 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
         Resource = "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:zero-tolerance-*"
       },
 
-      # --- 4. EventBridge (Removed wildcard, explicit API actions) ---
+      # --- 5. EventBridge (Removed wildcard, explicit API actions) ---
       {
         Sid    = "ManageEventBridge"
         Effect = "Allow"
@@ -107,7 +131,7 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
         Resource = "arn:aws:events:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:rule/zero-tolerance-*"
       },
 
-      # --- 5. SNS (Removed wildcard, explicit API actions) ---
+      # --- 6. SNS (Removed wildcard, explicit API actions) ---
       {
         Sid    = "ManageSNS"
         Effect = "Allow"
@@ -119,7 +143,7 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
         Resource = "arn:aws:sns:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:zero-tolerance-*"
       },
 
-      # --- 6. IAM Role & Policy (Strict Account ID Binding) ---
+      # --- 7. IAM Role & Policy (Strict Account ID Binding) ---
       {
         Sid    = "ManageIAM"
         Effect = "Allow"
@@ -142,7 +166,7 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
         Resource = "*"
       },
 
-      # --- 7. CloudWatch Logs for Lambda ---
+      # --- 8. CloudWatch Logs for Lambda ---
       {
         Sid    = "ManageCloudWatchLogs"
         Effect = "Allow"
