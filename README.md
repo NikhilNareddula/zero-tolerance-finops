@@ -165,7 +165,7 @@ export TF_VAR_is_enabled=true
 
 # Deploy OIDC infrastructure first (requires admin access)
 cd terraform
-terraform init #Locally
+terraform init
 terraform plan -target=aws_iam_openid_connect_provider.github \
                -target=aws_iam_role.github_actions_role \
                -target=aws_iam_policy.github_actions_least_privilege \
