@@ -44,6 +44,7 @@ resource "aws_iam_role" "github_actions_role" {
 
 # 3. The TRULY Strict Least Privilege Policy (AllowIAMRead moved here!)
 resource "aws_iam_policy" "github_actions_least_privilege" {
+  # checkov:skip=CKV_AWS_355: AWS requires a wildcard resource for Describe and List API actions
   name        = "ZeroTolerance-GitHubActions-Policy"
   description = "Strict, zero-skip IAM policy for FinOps deployment"
 
@@ -113,7 +114,7 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
         Sid    = "ManageLambda"
         Effect = "Allow"
         Action = [
-          "lambda:CreateFunction", "lambda:DeleteFunction", "lambda:UpdateFunctionCode", "lambda:ListVersionsByFunction","lambda:GetPolicy",
+          "lambda:CreateFunction", "lambda:DeleteFunction", "lambda:UpdateFunctionCode", "lambda:ListVersionsByFunction", "lambda:GetPolicy",
           "lambda:UpdateFunctionConfiguration", "lambda:GetFunction", "lambda:GetFunctionConfiguration", "lambda:GetFunctionCodeSigningConfig",
           "lambda:ListFunctions", "lambda:AddPermission", "lambda:RemovePermission", "lambda:ListTags", "lambda:TagResource"
         ]
