@@ -49,5 +49,5 @@ variable "security_alert_email" {
 variable "is_enabled" {
   description = "Safety Switch: true to deploy, false to destroy."
   type        = bool
-  default     = false
+  default     = true
 }
