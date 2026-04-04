@@ -25,9 +25,6 @@ resource "aws_lambda_function" "remediation_lambda" {
   runtime          = "python3.12"
   timeout          = 60
 
-  # Prevents runaway concurrency
-  # Critical safety measure: ensures only one instance runs at a time, preventing cascading failures and runaway costs.
-  reserved_concurrent_executions = 1
 
   # Injecting the SNS Topic ARN dynamically
   environment {
