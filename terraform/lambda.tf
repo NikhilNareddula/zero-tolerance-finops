@@ -16,7 +16,7 @@ resource "aws_lambda_function" "remediation_lambda" {
   # checkov:skip=CKV_AWS_272: Code signing is overkill for a single-file script deployed via CI/CD.
   # checkov:skip=CKV_AWS_173: Env vars contain no sensitive data; default AWS managed key is sufficient.
   # checkov:skip=CKV_AWS_116: This is a stateless scheduled job; failed events do not need to be reprocessed via DLQ.
-
+  # checkov:skip=CKV_AWS_355: The "DescribeInstances" action requires "*" resource; cannot be scoped down further.
   filename         = data.archive_file.lambda_zip.output_path
   function_name    = "zero-tolerance-remediation"
   role             = aws_iam_role.remediation_role[0].arn
