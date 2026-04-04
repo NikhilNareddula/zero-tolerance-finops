@@ -113,8 +113,8 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
         Sid    = "ManageLambda"
         Effect = "Allow"
         Action = [
-          "lambda:CreateFunction", "lambda:DeleteFunction", "lambda:UpdateFunctionCode","lambda:ListVersionsByFunction",
-          "lambda:UpdateFunctionConfiguration", "lambda:GetFunction", "lambda:GetFunctionConfiguration",
+          "lambda:CreateFunction", "lambda:DeleteFunction", "lambda:UpdateFunctionCode", "lambda:ListVersionsByFunction",
+          "lambda:UpdateFunctionConfiguration", "lambda:GetFunction", "lambda:GetFunctionConfiguration", "lambda:GetFunctionCodeSigningConfig",
           "lambda:ListFunctions", "lambda:AddPermission", "lambda:RemovePermission", "lambda:ListTags", "lambda:TagResource"
         ]
         Resource = "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:zero-tolerance-*"
