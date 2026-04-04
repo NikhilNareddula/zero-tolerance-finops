@@ -59,7 +59,9 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
           "iam:GetPolicy",
           "iam:GetRole",
           "iam:ListRolePolicies",
-          "iam:ListAttachedRolePolicies"
+          "iam:ListAttachedRolePolicies",
+          "iam:GetPolicyVersion",
+          "iam:ListPolicyVersions"
         ]
         Resource = [
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com",
