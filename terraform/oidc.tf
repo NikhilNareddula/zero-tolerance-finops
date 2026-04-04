@@ -138,7 +138,7 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
         Action = [
           "sns:CreateTopic", "sns:DeleteTopic", "sns:SetTopicAttributes",
           "sns:GetTopicAttributes", "sns:ListTopics", "sns:Subscribe",
-          "sns:Unsubscribe", "sns:ListSubscriptionsByTopic", "sns:ListTagsForResource", "sns:TagResource"
+          "sns:Unsubscribe", "sns:ListSubscriptionsByTopic", "sns:ListTagsForResource", "sns:TagResource", "sns:GetSubscriptionAttributes"
         ]
         Resource = "arn:aws:sns:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:zero-tolerance-*"
       },
@@ -152,7 +152,7 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
           "iam:PassRole", "iam:PutRolePolicy", "iam:DeleteRolePolicy", "iam:GetRolePolicy",
           "iam:AttachRolePolicy", "iam:DetachRolePolicy", "iam:ListAttachedRolePolicies",
           "iam:CreatePolicy", "iam:DeletePolicy", "iam:GetPolicy", "iam:GetPolicyVersion",
-          "iam:ListPolicyVersions", "iam:CreatePolicyVersion", "iam:DeletePolicyVersion"
+          "iam:ListPolicyVersions", "iam:CreatePolicyVersion", "iam:DeletePolicyVersion", "iam:ListRolePolicies"
         ]
         Resource = [
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/zero-tolerance-*",
