@@ -2,6 +2,8 @@
 
 > **Enterprise-grade AWS cost governance automation** | Real-time EC2 policy enforcement with zero manual intervention
 
+**Zero-Tolerance FinOps** delivers uncompromising AWS cost control through intelligent automation. This serverless solution instantly terminates non-compliant EC2 instances, enforces mandatory tagging policies, and restricts expensive instance types—eliminating cloud waste before it impacts your bottom line. Backed by industry research showing organizations lose billions annually to forgotten infrastructure, this system delivers measurable ROI with deployment costs under $5/month and savings of $10,000-$50,000+ monthly.
+
 ---
 
 ## Table of Contents
@@ -315,13 +317,13 @@ aws lambda invoke \
 │  Stage 1: Quality Gates (Format, Validate, Lint)            │
 │  ├─ terraform fmt -check                                    │
 │  ├─ terraform validate                                      │
-│  └─ tflint (https://github.com/terraform-linters/tflint)   │
+│  └─ tflint (https://github.com/terraform-linters/tflint)    │
 └─────────────────────────────────────────────────────────────┘
                           ↓ (Pass)
 ┌─────────────────────────────────────────────────────────────┐
 │  Stage 2: Security Scans (tfsec, Checkov)                   │
-│  ├─ tfsec (https://github.com/aquasecurity/tfsec)          │
-│  └─ Checkov (https://github.com/bridgecrewio/checkov)      │
+│  ├─ tfsec (https://github.com/aquasecurity/tfsec)           │
+│  └─ Checkov (https://github.com/bridgecrewio/checkov)       │
 └─────────────────────────────────────────────────────────────┘
                           ↓ (Pass)
 ┌─────────────────────────────────────────────────────────────┐
@@ -649,8 +651,8 @@ Zero-Tolerance FinOps directly solves these problems with automation.
 ---
 
 • **Built by**: Nikhil
-• **GitHub**: [@Nikhil-9391](https://github.com/Nikhil-9391)
-• **Project**: [zero-tolerance-finops](https://github.com/Nikhil-9391/zero-tolerance-finops)
+• **GitHub**: [@NikhilNareddula](https://github.com/NikhilNareddula)
+• **Project**: [zero-tolerance-finops](https://github.com/NikhilNareddula/zero-tolerance-finops)
 
 ---
 
