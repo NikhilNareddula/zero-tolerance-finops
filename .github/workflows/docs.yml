@@ -14,19 +14,19 @@ jobs:
   # to bypass all stages if only docs are updated
   
   quality-gates:
-    name: "🧹 Quality & Syntax"
+    name: "Quality & Syntax"
     runs-on: ubuntu-latest
     steps:
       - run: echo "Docs only update. Bypassing Quality & Syntax."
 
   security-scans:
-    name: "🔒 Security Audit"
+    name: "Security Audit"
     runs-on: ubuntu-latest
     steps:
       - run: echo "Docs only update. Bypassing Security Audit."
 
   deploy:
-    name: "🚀 Execute Deployment"
+    name: "Execute Deployment"
     runs-on: ubuntu-latest
     steps:
       - run: echo "Docs only update. Bypassing Deployment."
