@@ -1,9 +1,13 @@
 import os
 import sys
+import pytest
+from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.remediation import evaluate_instance, get_monthly_cost
+# Mock boto3 before importing remediation module
+with patch('boto3.client'):
+    from src.remediation import evaluate_instance, get_monthly_cost
 
 
 def test_get_monthly_cost_known_type():
