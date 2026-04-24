@@ -1,15 +1,31 @@
 
-# Local .terraform directories and binaries (
+# Terraform
 **/.terraform/*
-
-# .tfstate files 
 *.tfstate
 *.tfstate.*
-
-# Local variable files 
 *.tfvars
-*.tfvars.json
 
-# Crash log files
-crash.log
-crash.*.log
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+venv/
+.venv/
+env/
+
+
+# IDE
+.vscode/
+
+# Lambda packaging
+lambda_function.zip
+
+# Sensitive files
+*.pem
+*.key
+.env
+
+# OS
+.DS_Store
+Thumbs.db
