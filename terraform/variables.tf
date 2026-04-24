@@ -30,7 +30,7 @@ variable "managed_by" {
 variable "repo_name" {
   description = "GitHub repository in format OWNER/REPO"
   type        = string
-  default     = "Nikhil-9391/zero-tolerance-finops"
+  default     = "NikhilNareddula/zero-tolerance-finops"
 
   validation {
     condition     = can(regex("^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$", var.repo_name))

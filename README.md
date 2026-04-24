@@ -53,7 +53,7 @@ This project solves the problem with **automated, real-time enforcement**:
 
 • **Instant Compliance** - Non-compliant instances are stopped within seconds of launch, not days later
 
-• **Forced Tagging** - All instances must have `env` and `CostCenter` tags for accurate FinOps tracking
+• **Forced Tagging** - All instances must have `Env` and `CostCenter` tags for accurate FinOps tracking
 
 • **Cost Control** - Non-production instances restricted to small types (t2/t3.micro/small only)
 
@@ -133,13 +133,21 @@ This project solves the problem with **automated, real-time enforcement**:
 
 ## Policy Rules
 
-→ **Production Protection:** Instances tagged `env=prod` are always ignored
+→ **Production Protection:** Instances tagged `env=prod` are always ignored - no restrictions
 
-→ **Instance Type Restriction:** Non-prod instances must use t2/t3.micro or t2/t3.small only
+→ **Environment-Specific Instance Type Restrictions:**
+  - **Dev/Test**: t2.micro, t3.micro, t2.small, t3.small only
+  - **Stage**: t2.small through t3.large, plus c5.large and c5.xlarge
+  - **UAT**: t2.medium through t3.large, plus c5.large and c5.xlarge
+  - **Production**: No restrictions (all instance types allowed)
 
 → **Required Tags:** All instances must have `env` and `CostCenter` tags
 
-→ **Two-Strike System:** Existing instances get warning, then stopped if not fixed
+→ **Exception Mechanism:** Instances with tag `FinOpsException=Approved` bypass all rules (requires team approval)
+
+→ **Two-Strike System:** Existing instances get warning, then stopped if not fixed within 24 hours
+
+→ **Cost Tracking:** All notifications include estimated monthly cost and potential savings
 
 ---
 
@@ -308,6 +316,20 @@ aws lambda invoke \
 
 ---
 
+## Local Python Tests
+
+To validate the Lambda logic and keep the repo clean, install the Python dependencies and run the unit tests:
+
+```bash
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+pytest -q
+```
+
+This will execute the local unit tests for `src/remediation.py` and ensure the policy engine behaves correctly.
+
+---
+
 ## CI/CD Pipeline Details
 
 ### Pipeline Stages
@@ -427,11 +449,31 @@ zero-tolerance-finops/
 
 Edit `src/remediation.py`:
 ```python
+# Modify environment-specific rules
+INSTANCE_TYPE_RULES = {
+    'dev': ['t2.micro', 't3.micro', 't2.small', 't3.small'],
+    'stage': ['t2.small', 't3.small', 't2.medium', 't3.medium', 't2.large', 't3.large', 'c5.large', 'c5.xlarge'],
+    'uat': ['t2.medium', 't3.medium', 't2.large', 't3.large', 'c5.large', 'c5.xlarge'],
+    'prod': []  # No restrictions
+}
+
 # Add/remove required tags
 REQUIRED_TAGS = ['env', 'CostCenter', 'Owner']  
 
-# Restrict allowed instance types
-ALLOWED_DEV_TYPES = ['t2.micro', 't3.micro']  
+# Update instance costs for accurate savings calculation
+INSTANCE_COSTS = {
+    't2.micro': 0.0116,
+    't2.xlarge': 0.1856,
+    # Add more types as needed
+}
+```
+
+**To allow higher compute for Stage environment:**
+```python
+# Add more instance types to stage
+'stage': ['t2.small', 't3.small', 't2.medium', 't3.medium', 
+          't2.large', 't3.large', 't2.xlarge', 't3.xlarge',  # Add these
+          'c5.large', 'c5.xlarge', 'c5.2xlarge'],  # Add this
 ```
 
 ### Change AWS Region
