@@ -2,7 +2,7 @@
 
 > **Enterprise-grade AWS cost governance automation** | Real-time EC2 policy enforcement with zero manual intervention
 
-**Zero-Tolerance FinOps** delivers uncompromising AWS cost control through intelligent automation. This serverless solution instantly terminates non-compliant EC2 instances, enforces mandatory tagging policies, and restricts expensive instance types—eliminating cloud waste before it impacts your bottom line. Backed by industry research showing organizations lose billions annually to forgotten infrastructure, this system delivers measurable ROI with deployment costs under $5/month and savings of $10,000-$50,000+ monthly.
+**Zero-Tolerance FinOps** delivers uncompromising AWS cost control through intelligent automation. This serverless solution instantly terminates non-compliant EC2 instances, enforces mandatory tagging policies, and restricts expensive instance types—eliminating cloud waste before it impacts your bottom line. Backed by industry research showing organizations lose billions annually to forgotten infrastructure, this system delivers measurable ROI with deployment costs under $5/month and savings that scale from **$10,000-$50,000+ monthly** in smaller environments to **hundreds of thousands monthly and millions annually** in larger enterprise accounts.
 
 ---
 
@@ -59,7 +59,7 @@ This project solves the problem with **automated, real-time enforcement**:
 
 • **Zero Manual Work** - Automated daily audits with email reports (no spreadsheets needed)
 
-• **Measurable Savings** - Organizations save **$10,000-$50,000+ monthly** by eliminating waste
+• **Measurable Savings** - Organizations save **$5,000-$50,000+ monthly**, with enterprise-scale deployments able to protect **hundreds of thousands per month** and **millions per year** of avoidable AWS spend
 
 ### How It Saves Money
 
@@ -68,6 +68,18 @@ This project solves the problem with **automated, real-time enforcement**:
 • Stops forgotten instances automatically  
 • Provides audit trail for compliance teams
 
+
+## Key Features
+
+• **Real-time enforcement** — Immediately stops non-compliant EC2 launches with event-driven Lambda logic
+• **Dual-mode compliance engine** — Instant “Bouncer” enforcement plus scheduled “Auditor” daily scans
+• **Policy-as-code** — Centralized rule engine in Python for fast policy updates and consistent behavior
+• **Zero-credential deployment** — GitHub Actions with AWS OIDC eliminates stored AWS credentials
+• **Enterprise IaC** — Modular Terraform with encrypted remote state, native lockfile, and least-privilege IAM
+• **S3 lifecycle control** — Lifecycle rules retain essential Terraform state versions and purge stale waste versions automatically
+• **Automated security checks** — Integrated tfsec, Checkov, terraform fmt, and tflint to catch issues early
+• **Cost-first design** — Built to keep infrastructure costs under $5/month while maximizing FinOps savings
+• **Audit-ready reporting** — SNS email alerts and CloudWatch visibility for every enforcement action
 
 
 ## Technical Architecture
@@ -81,7 +93,7 @@ This project solves the problem with **automated, real-time enforcement**:
 2. **EventBridge Rules** → Real-time triggers for EC2 launches + scheduled daily audits
 3. **SNS Topic** → Pub/Sub messaging for email notifications
 4. **IAM Roles** → Least-privilege security with OIDC + custom policies
-5. **S3 Backend** → Versioned Terraform state with native lockfile
+5. **S3 Backend** → Versioned Terraform state with lifecycle-managed retention and native lockfile
 6. **GitHub Actions** → CI/CD pipeline with OIDC authentication
 
 ---
@@ -91,22 +103,23 @@ This project solves the problem with **automated, real-time enforcement**:
 ### 1. Serverless Policy Enforcement Engine
 
 • Designed event-driven Lambda function with dual-mode operation  
-• **Bouncer Mode**: Instant enforcement on new EC2 launches  
-• **Auditor Mode**: Scheduled daily compliance scans  
-• Implemented two-strike warning system for existing resources  
-• Built centralized policy evaluation logic for maintainability
+• **Bouncer Mode**: Immediate enforcement on new EC2 launches  
+• **Auditor Mode**: Scheduled daily compliance scanning + two-strike warnings  
+• Built centralized policy evaluation logic for fast rule updates and clear audit behavior  
+• Ensured testability with Python unit tests and modular enforcement flows
 
 ### 2. Infrastructure as Code (Terraform)
 
-• Modularized Terraform configuration across 8 files for separation of concerns  
-• Implemented S3 remote state with versioning, encryption, and native lockfile  
-• Created least-privilege IAM policies (replaced admin access)  
-• Built OIDC authentication for passwordless GitHub Actions
+• Implemented modular Terraform across multiple files for separation of concerns  
+• Configured an encrypted S3 backend with native lockfile and automatic backend bootstrap  
+• Enabled S3 lifecycle rules to automate retention and cleanup of stale Terraform state versions  
+• Applied least-privilege IAM policies and GitHub OIDC for secure deployments  
+• Built audit-ready infrastructure with CloudWatch, SNS alerts, and deploy-time validation
 
 ### 3. Enterprise CI/CD Pipeline
 
 • **3-stage pipeline** with quality gates
-• **Stage 1**: Format validation, syntax checks, linting ([tflint](https://github.com/terraform-linters/tflint))
+• **Stage 1**: Python linting/testing + Terraform format validation, syntax checks, linting ([ruff](https://github.com/astral-sh/ruff) + [pytest](https://github.com/pytest-dev/pytest) + [tflint](https://github.com/terraform-linters/tflint))
 • **Stage 2**: Security scanning ([tfsec](https://github.com/aquasecurity/tfsec) + [Checkov](https://github.com/bridgecrewio/checkov))
 • **Stage 3**: Terraform plan/apply with OIDC
 • Automated PR comments with Terraform plan previews
@@ -156,10 +169,13 @@ This project solves the problem with **automated, real-time enforcement**:
 ### Prerequisites
 
 • AWS Account with admin access (only for initial setup)
-• GitHub repository
+• GitHub repository (fork or clone of this repository)
 • Terraform >= 1.11.0
-• AWS CLI configured
+• AWS CLI configured and authenticated
+• Python 3.12+ (for local testing and development)
 • Email address for alerts
+
+**Note:** This deployment is currently configured for the `ap-south-1` (Mumbai) region. The S3 backend bucket and all resources will be created in this region.
 
 ### Step 1: Initial Infrastructure Setup (Local)
 
@@ -167,7 +183,7 @@ This project solves the problem with **automated, real-time enforcement**:
 
 ```bash
 # Clone repository
-git clone https://github.com/Nikhil-9391/zero-tolerance-finops.git
+git clone https://github.com/NikhilNareddula/zero-tolerance-finops.git
 cd zero-tolerance-finops
 
 # Set required variables
@@ -176,7 +192,7 @@ export TF_VAR_is_enabled=true
 
 # Deploy OIDC infrastructure first (requires admin access)
 cd terraform
-terraform init
+terraform init -backend=false
 terraform plan -target=aws_iam_openid_connect_provider.github \
                -target=aws_iam_role.github_actions_role \
                -target=aws_iam_policy.github_actions_least_privilege \
@@ -187,22 +203,25 @@ terraform apply -target=aws_iam_openid_connect_provider.github \
                 -target=aws_iam_policy.github_actions_least_privilege \
                 -target=aws_iam_role_policy_attachment.github_actions_custom_attach
 
-# Copy the OIDC role ARN from output - you'll need this for GitHub
+# Copy the OIDC role ARN from the output - you'll need this for GitHub
+# Look for: github_actions_role_arn = "arn:aws:iam::123456789012:role/..."
 ```
 
 **Important:** After this step, you no longer need admin access. All future deployments will use GitHub Actions with the least-privilege OIDC role.
+
+**What happens next:** The CI/CD pipeline will automatically create the S3 backend bucket and deploy all remaining infrastructure (Lambda, EventBridge, SNS) when you push to the main branch.
 
 ### Step 2: Configure GitHub for CI/CD
 
 **Add Repository Variables:**
 
 → Path: `Settings → Secrets and variables → Actions → Variables`
-• `AWS_OIDC_ROLE_ARN` - Copy from Terraform output
+• `AWS_OIDC_ROLE_ARN` - Paste the OIDC role ARN from Step 1 output
 
 **Add Repository Secrets:**
 
 → Path: `Settings → Secrets and variables → Actions → Secrets`
-• `SECURITY_ALERT_EMAIL` - Your notification email
+• `SECURITY_ALERT_EMAIL` - Your notification email (same as TF_VAR_security_alert_email)
 
 ### Step 3: Protect Main Branch
 
@@ -218,9 +237,9 @@ terraform apply -target=aws_iam_openid_connect_provider.github \
 
 ### Step 4: Confirm SNS Subscription
 
-Check your email and click the confirmation link to receive alerts.
+After deployment, check your email and click the confirmation link to receive alerts.
 
-### Step 5: Test the System
+### Step 5: Deploy and Test the System
 
 Push to `main` to trigger automated deployment:
 
@@ -230,12 +249,16 @@ git commit -m "Enable FinOps automation"
 git push origin main
 ```
 
-**What happens next:**
+**What happens automatically:**
 
-1. GitHub Actions pipeline automatically runs
-2. OIDC authenticates with AWS (no credentials needed)
-3. Terraform deploys remaining infrastructure (Lambda, EventBridge, SNS)
-4. System is live and monitoring EC2 instances
+1. GitHub Actions pipeline runs all quality gates (Python linting, testing, Terraform validation)
+2. Security scans complete (tfsec, Checkov)
+3. OIDC authentication connects to AWS (no credentials needed)
+4. S3 backend bucket is created automatically
+5. Full infrastructure deploys (Lambda, EventBridge, SNS)
+6. System is live and monitoring EC2 instances
+
+**Expected Result:** Success confirmation in GitHub Actions, plus an email confirmation for SNS subscription.
 
 ---
 
@@ -337,6 +360,8 @@ This will execute the local unit tests for `src/remediation.py` and ensure the p
 ```yaml
 ┌─────────────────────────────────────────────────────────────┐
 │  Stage 1: Quality Gates (Format, Validate, Lint)            │
+│  ├─ Python linting (ruff)                                   │
+│  ├─ Python testing (pytest)                                 │
 │  ├─ terraform fmt -check                                    │
 │  ├─ terraform validate                                      │
 │  └─ tflint (https://github.com/terraform-linters/tflint)    │
@@ -382,6 +407,8 @@ This will execute the local unit tests for `src/remediation.py` and ensure the p
 
 → **State Encryption** - S3 backend with encryption and versioning enabled
 
+→ **Lifecycle Retention** - S3 lifecycle rules keep Terraform state versions lean and remove stale state history
+
 → **Audit Trail** - All actions logged to CloudWatch Logs for compliance
 
 → **Two-Strike System** - Existing instances get warning before enforcement
@@ -397,7 +424,7 @@ This will execute the local unit tests for `src/remediation.py` and ensure the p
 • **Lambda** → ~1,000 invocations/month = $0.20 (free tier eligible) | [AWS Lambda Pricing](https://aws.amazon.com/lambda/pricing/)
 • **EventBridge** → 2 rules + ~30 events/month = $0.00 (free tier) | [EventBridge Pricing](https://aws.amazon.com/eventbridge/pricing/)
 • **SNS** → ~30 email notifications = $0.00 (free tier) | [SNS Pricing](https://aws.amazon.com/sns/pricing/)
-• **S3** → State file storage (~1 MB) = $0.02 | [S3 Pricing](https://aws.amazon.com/s3/pricing/)
+• **S3** → State file storage (~1 MB) = $0.02 | [S3 Pricing](https://aws.amazon.com/s3/pricing/) — lifecycle-managed state retention reduces long-term storage and version overhead
 • **CloudWatch Logs** → ~10 MB/month = $0.01 | [CloudWatch Pricing](https://aws.amazon.com/cloudwatch/pricing/)
 
 **Cost Estimation Methodology:**
@@ -411,7 +438,7 @@ Estimations are based on:
 ---
 
 **ROI Calculation:**  
-Saves $10,000-$50,000+ monthly vs. costs < $5/month = **200,000%+ ROI**
+This automation costs under $5/month while targeting the most common AWS waste patterns. For smaller environments, it can recover **$10,000-$50,000+ per month**; for larger enterprise accounts, reclaiming 1-2% of a multi-million-dollar AWS bill can translate to **hundreds of thousands per month and millions per year**.
 
 ---
 
@@ -421,10 +448,14 @@ Saves $10,000-$50,000+ monthly vs. costs < $5/month = **200,000%+ ROI**
 zero-tolerance-finops/
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml              # 3-stage CI/CD pipeline
+│       ├── deploy.yml              # 3-stage CI/CD pipeline
+│       └── docs.yml                # Documentation deployment
+├── docs/
+│   └── architecture.png            # System architecture diagram
 ├── scripts/
 │   └── tf-init.sh                  # S3 backend auto-bootstrap
 ├── src/
+│   ├── __init__.py                 # Python package initialization
 │   └── remediation.py              # Lambda enforcement engine
 ├── terraform/
 │   ├── main.tf                     # Provider + default tags
@@ -436,9 +467,13 @@ zero-tolerance-finops/
 │   ├── iam.tf                      # Lambda execution role
 │   ├── sns.tf                      # Email notifications
 │   └── oidc.tf                     # GitHub OIDC provider + role
+├── tests/
+│   └── test_remediation.py         # Unit tests for remediation logic
 ├── .gitignore
 ├── LICENSE
-└── README.md
+├── README.md
+├── requirements.txt                # Python dependencies
+└── SECURITY.md                     # Security policy
 ```
 
 ---
@@ -534,6 +569,13 @@ terraform force-unlock <LOCK_ID>
 ---
 
 ## Skills Demonstrated
+
+### Engineering Thinking
+• Designed for safety-first enforcement with zero-credential deployment
+• Balanced real-time policy control and scheduled compliance auditing
+• Built a maintainable policy engine that supports rapid FinOps rule changes
+• Applied risk-aware automation to reduce human error and cloud waste
+• Emphasized auditability, observability, and repeatable infrastructure deployment
 
 ### Cloud Engineering
 • AWS serverless architecture (Lambda, EventBridge, SNS)
