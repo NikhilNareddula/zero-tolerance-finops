@@ -44,6 +44,7 @@ Zero-Tolerance FinOps implements enterprise-grade security practices to ensure s
 **Encryption at Rest**
 -  Terraform state encrypted in S3 (SSE-S3 by default, upgradeable to KMS)
 -  S3 versioning enabled for state rollback
+-  S3 lifecycle rules configured to purge stale Terraform state versions and limit retained state history
 -  CloudWatch Logs encrypted (AWS-managed)
 
 **Data Minimization**
@@ -192,6 +193,7 @@ aws logs filter-log-events \
   - [ ] S3 bucket has versioning enabled
   - [ ] S3 bucket has encryption enabled
   - [ ] S3 bucket has public access blocked
+  - [ ] S3 lifecycle rules configured for Terraform state retention and cleanup
   - [ ] DynamoDB table for state locking configured
 
 - [ ] **Testing**

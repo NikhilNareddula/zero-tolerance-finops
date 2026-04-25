@@ -207,35 +207,81 @@ AWS Console: https://console.aws.amazon.com/ec2/v2/home#Instances:instanceId={in
         )
 
 def run_auditor():
-    """The Auditor: Scans all running instances on a schedule."""
-    response = ec2.describe_instances(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
+    """The Auditor: Scans all running instances on a schedule using Paginators and Batching."""
+    logger.info("Starting enterprise-scale FinOps audit...")
     
-    warned_instances = []
-    stopped_instances = []
+    # 1. Initialize the Paginator to efficiently handle large numbers of instances without hitting memory limits
+    paginator = ec2.get_paginator('describe_instances')
+    page_iterator = paginator.paginate(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['running']}]
+    )
     
-    for reservation in response['Reservations']:
-        for instance in reservation['Instances']:
-            instance_id = instance['InstanceId']
-            tags = {tag['Key']: tag['Value'] for tag in instance.get('Tags', [])}
-            instance_type = instance['InstanceType']
-            
-            action, reason = evaluate_instance(instance_id, tags, instance_type, is_new_launch=False)
-            
-            if action == 'WARN':
-                # Strike 1: Tag it with a warning
-                ec2.create_tags(Resources=[instance_id], Tags=[{'Key': 'FinOpsWarning', 'Value': 'Action-Required'}])
-                warned_instances.append(f"{instance_id} - {reason}")
-                
-            elif action in ['STOP_IMMEDIATE', 'STOP_PREVIOUS_WARN']:
-                # Strike 2 (or expensive dev): Stop it
-                ec2.stop_instances(InstanceIds=[instance_id])
-                ec2.create_tags(Resources=[instance_id], Tags=[{'Key': 'FinOpsStatus', 'Value': 'Terminated-By-Auditor'}])
-                stopped_instances.append(f"{instance_id} - {reason}")
-                
-    # Send a single consolidated email report if anything happened
-    if warned_instances or stopped_instances:
-        total_stopped = len(stopped_instances)
-        total_warned = len(warned_instances)
+    warned_instances_log = []
+    stopped_instances_log = []
+    
+    # Lists to batch our API calls outside the loop  
+    instances_to_warn = []
+    instances_to_stop = []
+    
+    # 2. Safely evaluate instances in memory 
+    for page in page_iterator:
+        for reservation in page.get('Reservations', []):
+            for instance in reservation.get('Instances', []):
+                try:
+                    instance_id = instance['InstanceId']
+                    tags = {tag['Key']: tag['Value'] for tag in instance.get('Tags', [])}
+                    instance_type = instance['InstanceType']
+                    
+                    action, reason = evaluate_instance(instance_id, tags, instance_type, is_new_launch=False)
+                    
+                    if action == 'WARN':
+                        instances_to_warn.append(instance_id)
+                        warned_instances_log.append(f"{instance_id} - {reason}")
+                        
+                    elif action in ['STOP_IMMEDIATE', 'STOP_PREVIOUS_WARN']:
+                        instances_to_stop.append(instance_id)
+                        stopped_instances_log.append(f"{instance_id} - {reason}")
+                        
+                except Exception as e:
+                    # If one instance has weird data, log it and keep moving. Don't crash the Lambda.
+                    logger.error(f"Failed to evaluate instance {instance.get('InstanceId', 'Unknown')}: {str(e)}")
+                    continue 
+
+    # 3. Execute Actions Outside the Loop (Batched)
+    
+    # Process Warnings (AWS allows max 1000 IDs per create_tags call) 
+    # We batch the tagging to minimize API calls and improve performance, especially for large environments.
+    if instances_to_warn:
+        logger.info(f"Applying warning tags to {len(instances_to_warn)} instances...")
+        for i in range(0, len(instances_to_warn), 1000):
+            chunk = instances_to_warn[i:i + 1000]
+            try:
+                ec2.create_tags(
+                    Resources=chunk,
+                    Tags=[{'Key': 'FinOpsWarning', 'Value': 'Action-Required'}]
+                )
+            except ClientError as e:
+                logger.error(f"Failed to tag warning chunk: {str(e)}")
+
+    # Process Stops (AWS allows max 1000 IDs per stop_instances call)
+  
+    if instances_to_stop:
+        logger.info(f"Stopping {len(instances_to_stop)} non-compliant instances...")
+        for i in range(0, len(instances_to_stop), 1000):
+            chunk = instances_to_stop[i:i + 1000]
+            try:
+                ec2.stop_instances(InstanceIds=chunk)
+                ec2.create_tags(
+                    Resources=chunk,
+                    Tags=[{'Key': 'FinOpsStatus', 'Value': 'Terminated-By-Auditor'}]
+                )
+            except ClientError as e:
+                logger.error(f"Failed to stop/tag instances chunk: {str(e)}")
+
+    # 4. Send the Consolidated Email Report
+    if warned_instances_log or stopped_instances_log:
+        total_stopped = len(stopped_instances_log)
+        total_warned = len(warned_instances_log)
         
         message = f"""DAILY FINOPS AUDIT REPORT
 {'='*60}
@@ -248,17 +294,16 @@ Summary:
 {'='*60}
 
 """
-        
-        if stopped_instances:
+        if stopped_instances_log:
             message += "STOPPED INSTANCES (Rule Violations):\n"
             message += "-" * 60 + "\n"
-            message += "\n".join(stopped_instances) + "\n\n"
+            message += "\n".join(stopped_instances_log) + "\n\n"
             message += "These instances have been stopped to prevent cost waste.\n\n"
         
-        if warned_instances:
+        if warned_instances_log:
             message += "WARNED INSTANCES (Action Required - Will be stopped next run):\n"
             message += "-" * 60 + "\n"
-            message += "\n".join(warned_instances) + "\n\n"
+            message += "\n".join(warned_instances_log) + "\n\n"
             message += "Please fix these instances within 24 hours to avoid automatic shutdown.\n\n"
         
         message += f"""{'='*60}
@@ -285,7 +330,8 @@ TO REQUEST EXCEPTIONS:
 
 Questions? Contact your FinOps team.
 """
-            
+
+#push the notification with a clear subject line and detailed message            
         publish_notification(
             subject=f"AWS FinOps Daily Audit: {total_stopped} Stopped, {total_warned} Warned",
             message=message
