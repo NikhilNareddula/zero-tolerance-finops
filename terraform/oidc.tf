@@ -75,7 +75,7 @@ resource "aws_iam_policy" "github_actions_least_privilege" {
       {
         Sid      = "S3StateBucketList"
         Effect   = "Allow"
-        Action   = ["s3:ListBucket", "s3:putLifecycleConfiguration", "s3:GetBucketLifecycleConfiguration"]
+        Action   = ["s3:ListBucket", "s3:putLifecycleConfiguration", "s3:GetLifecycleConfiguration",]
         Resource = "arn:aws:s3:::zero-tolerance-state-*"
       },
       # --- 2. S3 State Management (Object Level) ---
